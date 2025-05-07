@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Status</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Server Status</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Server</th>
+                <th>Requests</th>
+                <th>Average Response Time (s)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for server, stats in server_stats.items() %}
+                <tr>
+                    <td>{{ server }}</td>
+                    <td>{{ stats['requests'] }}</td>
+                    <td>{{ stats['avg_response_time'] }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
