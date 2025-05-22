@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cloud Load Balancer Dashboard</title>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+  <!-- Toast notification -->
+  <div id="toast" class="hidden fixed top-5 right-5 bg-black text-white px-4 py-2 rounded-lg z-50 shadow-lg"></div>
+
+  <!-- Notification container -->
+  <div id="notification-container" class="fixed bottom-5 right-5 space-y-2 z-50"></div>
+
+  <!-- Offline modal -->
+  <div id="offlineModal" class="hidden fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+    <div class="bg-white p-6 rounded-lg shadow-xl text-center max-w-sm mx-4">
+      <h2 class="text-xl font-bold mb-4">Server Offline</h2>
+      <p id="offlineMessage" class="mb-4">One or more servers are not responding.</p>
+      <button onclick="closeModal()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Close</button>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="max-w-5xl mx-auto p-6 space-y-6">
+    <h1 class="text-3xl font-bold text-center">Cloud Load Balancer Dashboard</h1>
+
+    <!-- Load Balancing Strategy Selector -->
+    <form method="POST" class="bg-white p-4 rounded shadow-md flex items-center justify-center gap-4">
+      <label for="backend" class="text-lg font-semibold">Select Load Balancing Strategy:</label>
+      <select name="backend" id="backend" class="px-3 py-2 rounded border">
+        <option value="roundrobin">Round Robin</option>
+        <option value="leastconn">Least Connections</option>
+        <option value="source">Source IP Hashing</option>
+      </select>
+      <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">Apply</button>
+    </form>
+
+    <!-- Health status -->
+    <div id="healthStatus" class="bg-white p-4 rounded shadow-md">
+      <h2 class="text-xl font-semibold mb-2">Server Health Status</h2>
+      <ul id="healthList" class="list-disc list-inside text-gray-700"></ul>
+    </div>
+
+    <!-- Request simulation buttons -->
+    <div class="bg-white p-4 rounded shadow-md">
+      <h2 class="text-xl font-semibold mb-2">Simulate Requests</h2>
+      <div class="flex gap-4">
+        <button onclick="simulateRequest('server1')" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">Simulate Request to Server 1</button>
+        <button onclick="simulateRequest('server2')" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded">Simulate Request to Server 2</button>
+      </div>
+    </div>
+
+    <!-- Request chart -->
+    <div class="bg-white p-6 rounded shadow-md">
+      <h2 class="text-xl font-semibold mb-4">Live Request Distribution</h2>
+      <canvas id="trafficChart" width="400" height="200"></canvas>
+    </div>
+  </div>
+
+  <script>
+    const flashedMessage = "{{ get_flashed_messages()|first }}";
+    if (flashedMessage) showToast(flashedMessage);
+
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.remove("hidden");
+      setTimeout(() => toast.classList.add("hidden"), 3000);
+    }
+
+    function showModal(message) {
+      const modal = document.getElementById("offlineModal");
+      const msg = document.getElementById("offlineMessage");
+      msg.textContent = message;
+      modal.classList.remove("hidden");
+    }
+
+    function closeModal() {
+      document.getElementById("offlineModal").classList.add("hidden");
+    }
+
+    function showNotification(message, type = 'info') {
+      const container = document.getElementById("notification-container");
+      const notif = document.createElement("div");
+      notif.className = `px-4 py-3 rounded-lg shadow-lg text-white transition-all duration-500 ${
+        type === 'success' ? 'bg-green-500' :
+        type === 'error' ? 'bg-red-500' : 
+        'bg-blue-500'
+      }`;
+      notif.textContent = message;
+      container.appendChild(notif);
+      setTimeout(() => {
+        notif.classList.add('opacity-0');
+        setTimeout(() => container.removeChild(notif), 500);
+      }, 3000);
+    }
+
+    async function simulateRequest(server) {
+      const res = await fetch(`/simulate/${server}`);
+      const msg = await res.text();
+      showNotification(msg, msg.includes('error') ? 'error' : 'success');
+    }
+
+    async function updateHealthStatus() {
+      const res = await fetch('/api/health');
+      const statuses = await res.json();
+      const list = document.getElementById('healthList');
+      list.innerHTML = '';
+      for (let server in statuses) {
+        const li = document.createElement('li');
+        li.textContent = `${server}: ${statuses[server] ? 'Online' : 'Offline'}`;
+        li.className = statuses[server] ? 'text-green-600' : 'text-red-600';
+        list.appendChild(li);
+      }
+    }
+
+    updateHealthStatus();
+    setInterval(updateHealthStatus, 10000);
+
+    const ctx = document.getElementById('trafficChart').getContext('2d');
+    const trafficChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Server 1', 'Server 2', 'Server 3', 'Server 4', 'Server 5'],
+        datasets: [{
+          label: 'Request Count',
+          data: {{ request_counts | tojson }},
+          backgroundColor: [
+            'rgba(34,197,94,0.7)',
+            'rgba(99,102,241,0.7)',
+            'rgba(234,179,8,0.7)',
+            'rgba(239,68,68,0.7)',
+            'rgba(168,85,247,0.7)'
+          ],
+          borderColor: [
+            'rgba(34,197,94,1)',
+            'rgba(99,102,241,1)',
+            'rgba(234,179,8,1)',
+            'rgba(239,68,68,1)',
+            'rgba(168,85,247,1)'
+          ],
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.dataset.label}: ${context.raw}`;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              precision: 0
+            }
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
