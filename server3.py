@@ -1,13 +1,13 @@
-from flask import Flask, request
-from datetime import datetime
-
+from flask import Flask
 app = Flask(__name__)
 
 @app.route('/')
-def index():
-    with open("server3.log", "a") as log:
-        log.write(f"{datetime.now()} - Request from {request.remote_addr}\n")
-    return 'Response from Server 3'
+def home():
+    return "Response from Server 3"
+
+@app.route('/health')
+def health():
+    return 'OK', 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5003)
+    app.run(port=5003)

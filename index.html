@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cloud Load Balancer Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #e0eafc, #cfdef3);
+            text-align: center;
+            padding-top: 80px;
+            margin: 0;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 2.5rem;
+        }
+
+        .button-group {
+            margin-top: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+
+        #output {
+            margin-top: 40px;
+            font-size: 18px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            width: 60%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            color: #333;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Distributor Load Balancer for Cloud Center</h1>
+
+    <div class="button-group">
+        <button onclick="fetchFromPort(5001)">Server 1</button>
+        <button onclick="fetchFromPort(5002)">Server 2</button>
+        <button onclick="fetchFromPort(5003)">Server 3</button>
+        <button onclick="fetchFromPort(5004)">Server 4 (Flaky)</button>
+        <button onclick="fetchFromPort(5005)">Server 5 (Down Sometimes)</button>
+        <button onclick="fetchFromPort(8080)">Random (Via Load Balancer)</button>
+    </div>
+
+    <div id="output">Click a button to send a request.</div>
+
+    <script>
+        function fetchFromPort(port) {
+            const url = `http://localhost:${port}/`;
+            document.getElementById('output').innerText = `Sending request to port ${port}...`;
+
+            fetch(url)
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('output').innerText = `✅ Response from port ${port}:\n\n${data}`;
+                })
+                .catch(error => {
+                    document.getElementById('output').innerText = `❌ Error contacting port ${port}:\n${error}`;
+                });
+        }
+    </script>
+</body>
+</html>
