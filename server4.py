@@ -13,5 +13,10 @@ def index():
         log.write(f"{datetime.now()} - Request from {request.remote_addr} - Delay: {delay:.2f}s\n")
     return 'Response from Server 4 (Flaky)'
 
+# Add this health check route
+@app.route('/health')
+def health():
+    return 'OK', 200
+    
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5004)
