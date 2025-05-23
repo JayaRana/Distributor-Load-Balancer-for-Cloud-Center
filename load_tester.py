@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 import threading
+#code
 
 LOG_FILE = "traffic_logs.jsonl"
 lock = threading.Lock()  # To avoid race conditions if multithreaded
